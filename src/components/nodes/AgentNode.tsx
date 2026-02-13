@@ -2,19 +2,21 @@
 
 import React, { useState } from 'react';
 import { Handle, Position, NodeProps } from '@xyflow/react';
-import { Edit, Trash2, Clock, Zap } from 'lucide-react';
+import { Edit, Trash2, Clock, Zap, Check } from 'lucide-react';
 import { AgentNode as AgentNodeType } from '@/types/workflow';
 
 export type AgentNodeData = {
-  // Custom properties only - these go into the node's data object
+  // Custom properties only - these go into node's data object
   name: string;
   prompt: string;
   timeout: number;
   dependsOn: string[];
   output?: 'json' | 'text' | 'file' | 'none';
+  onUpdate?: (agentId: string, updates: Partial<AgentNodeType>) => void;
+  onDelete?: (agentId: string) => void;
 };
 
-export function NodeComponent({ data, selected }: NodeProps) {
+export function NodeComponent({ data, selected, id }: NodeProps) {
   const nodeData = data as AgentNodeData;
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(nodeData.name);
@@ -22,7 +24,14 @@ export function NodeComponent({ data, selected }: NodeProps) {
   const [timeout, setTimeout] = useState(nodeData.timeout / 1000);
 
   const handleSave = () => {
-    // This will be handled by the parent component through React Flow's events
+    // Update the node data with the new values
+    if (nodeData.onUpdate) {
+      nodeData.onUpdate(id as string, {
+        name,
+        prompt,
+        timeout: timeout * 1000,
+      });
+    }
     setIsEditing(false);
   };
 
@@ -61,8 +70,17 @@ export function NodeComponent({ data, selected }: NodeProps) {
           }}
           className="p-1.5 hover:bg-slate-700 rounded text-slate-300 hover:text-white transition-colors"
         >
-          <Edit size={12} className="sm:hidden" />
-          <Edit size={14} className="hidden sm:block" />
+          {isEditing ? (
+            <>
+              <Check size={12} className="sm:hidden" />
+              <Check size={14} className="hidden sm:block" />
+            </>
+          ) : (
+            <>
+              <Edit size={12} className="sm:hidden" />
+              <Edit size={14} className="hidden sm:block" />
+            </>
+          )}
         </button>
       </div>
 

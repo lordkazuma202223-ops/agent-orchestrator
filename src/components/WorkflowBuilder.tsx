@@ -48,6 +48,8 @@ export function WorkflowBuilder({
         timeout: agent.timeout,
         dependsOn: agent.dependsOn,
         output: agent.output,
+        onUpdate: updateAgent,
+        onDelete: deleteAgent,
       };
 
       const node: Node = {
