@@ -16,30 +16,35 @@ export async function POST(request: NextRequest) {
                              body.task?.toLowerCase().includes('goto') ||
                              body.task?.toLowerCase().includes('navigate');
 
-    // For browser tasks, use agent-browser tool with isolated session
+    // For browser tasks, use /v1/responses with agent-browser agent
     if (isBrowserTask) {
-      // Use OpenClaw sessions_spawn tool with agent-browser
-      // This bypasses the 'main' agent's Chrome extension requirement
-      const gatewayResponse = await fetch(`${GATEWAY_URL}/api/sessions/spawn`, {
+      const gatewayRequest = {
+        model: 'openclaw',
+        input: [
+          {
+            type: 'message',
+            role: 'user',
+            content: body.task,
+          },
+        ],
+      };
+
+      const response = await fetch(`${GATEWAY_URL}/v1/responses`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': GATEWAY_TOKEN,
+          'Authorization': `Bearer ${GATEWAY_TOKEN}`,
+          'x-openclaw-agent-id': 'agent-browser',
         },
-        body: JSON.stringify({
-          task: body.task,
-          label: body.label || 'agent-orchestrator',
-          agentId: 'agent-browser',
-          sessionTarget: 'isolated',
-        }),
+        body: JSON.stringify(gatewayRequest),
       });
 
-      if (!gatewayResponse.ok) {
-        const errorText = await gatewayResponse.text();
+      if (!response.ok) {
+        const errorText = await response.text();
         return NextResponse.json(
           { error: `Failed to spawn browser agent: ${errorText}` },
           {
-            status: gatewayResponse.status,
+            status: response.status,
             headers: {
               'Access-Control-Allow-Origin': '*',
               'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -49,12 +54,14 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const gatewayData = await gatewayResponse.json();
-      const outputText = gatewayData.message || 'Browser task completed';
+      const data = await response.json();
+
+      // Extract text from response
+      const outputText = data.output?.[0]?.content?.[0]?.text || data.message || 'Browser task completed';
 
       return NextResponse.json(
         {
-          sessionKey: gatewayData.sessionKey || 'generated-session',
+          sessionKey: data.id || 'generated-session',
           message: outputText,
         },
         {
