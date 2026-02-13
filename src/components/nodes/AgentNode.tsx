@@ -6,27 +6,20 @@ import { Edit, Trash2, Clock, Zap } from 'lucide-react';
 import { AgentNode as AgentNodeType } from '@/types/workflow';
 
 export type AgentNodeData = {
-  // Required by @xyflow/react NodeProps
-  id: string;
-  position: { x: number; y: number };
-  // Custom properties
+  // Custom properties only - these go into the node's data object
   name: string;
   prompt: string;
   timeout: number;
   dependsOn: string[];
   output?: 'json' | 'text' | 'file' | 'none';
-  // Additional properties from @xyflow/react Node
-  sourcePosition?: { x: number; y: number };
-  targetPosition?: { x: number; y: number };
-  measured?: { width: number; height: number };
-  resizing?: boolean;
 };
 
-export function NodeComponent({ data, selected }: NodeProps<AgentNodeData>) {
+export function NodeComponent({ data, selected }: NodeProps) {
+  const nodeData = data as AgentNodeData;
   const [isEditing, setIsEditing] = useState(false);
-  const [name, setName] = useState(data.name);
-  const [prompt, setPrompt] = useState(data.prompt);
-  const [timeout, setTimeout] = useState(data.timeout / 1000);
+  const [name, setName] = useState(nodeData.name);
+  const [prompt, setPrompt] = useState(nodeData.prompt);
+  const [timeout, setTimeout] = useState(nodeData.timeout / 1000);
 
   const handleSave = () => {
     // This will be handled by the parent component through React Flow's events
@@ -57,7 +50,7 @@ export function NodeComponent({ data, selected }: NodeProps<AgentNodeData>) {
               autoFocus
             />
           ) : (
-            <span className="text-white font-semibold text-sm">{data.name}</span>
+            <span className="text-white font-semibold text-sm">{nodeData.name}</span>
           )}
         </div>
         <button
@@ -83,7 +76,7 @@ export function NodeComponent({ data, selected }: NodeProps<AgentNodeData>) {
           />
         ) : (
           <p className="text-slate-300 text-xs line-clamp-2">
-            {data.prompt || 'No prompt set...'}
+            {nodeData.prompt || 'No prompt set...'}
           </p>
         )}
       </div>
@@ -104,7 +97,7 @@ export function NodeComponent({ data, selected }: NodeProps<AgentNodeData>) {
         ) : (
           <div className="flex items-center gap-1">
             <Clock size={12} />
-            <span>{Math.floor(data.timeout / 1000)}s</span>
+            <span>{Math.floor(nodeData.timeout / 1000)}s</span>
           </div>
         )}
 
