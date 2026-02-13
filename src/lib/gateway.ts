@@ -1,5 +1,5 @@
 const GATEWAY_URL = process.env.NEXT_PUBLIC_OPENCLAW_GATEWAY_URL || 'http://localhost:18789';
-const GATEWAY_TOKEN = process.env.GATEWAY_TOKEN || '';
+const GATEWAY_TOKEN = process.env.NEXT_PUBLIC_GATEWAY_TOKEN || '';
 
 // Debug logging
 if (typeof window !== 'undefined') {
