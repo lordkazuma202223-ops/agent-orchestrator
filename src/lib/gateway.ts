@@ -5,7 +5,10 @@ const GATEWAY_TOKEN = process.env.NEXT_PUBLIC_GATEWAY_TOKEN || '';
 if (typeof window !== 'undefined') {
   console.log('=== GATEWAY DEBUG ===');
   console.log('GATEWAY_URL:', GATEWAY_URL);
-  console.log('GATEWAY_TOKEN:', GATEWAY_TOKEN ? `SET (${GATEWAY_TOKEN.slice(0, 10)}...)` : 'MISSING or EMPTY');
+  console.log('Raw GATEWAY_TOKEN value:', GATEWAY_TOKEN);
+  console.log('GATEWAY_TOKEN length:', GATEWAY_TOKEN.length);
+  console.log('Token starts with 07a5d?', GATEWAY_TOKEN.startsWith('07a5d'));
+  console.log('Authorization header will be:', GATEWAY_TOKEN ? 'PRESENT' : 'MISSING');
   console.log('====================');
 }
 
