@@ -1,6 +1,18 @@
 const GATEWAY_URL = process.env.NEXT_PUBLIC_OPENCLAW_GATEWAY_URL || 'http://localhost:18789';
 const GATEWAY_TOKEN = process.env.NEXT_PUBLIC_GATEWAY_TOKEN || '';
 
+// Create custom fetch wrapper to avoid interception
+const safeFetch: typeof fetch = (url, options) => {
+  const fullUrl = typeof url === 'string' ? url : url.toString();
+  console.log('🔒 SAFE FETCH called with:', fullUrl);
+
+  // Use native fetch with URL object to avoid string manipulation
+  const urlObj = new URL(fullUrl);
+  console.log('🔒 URL object:', urlObj.href);
+
+  return window.fetch(urlObj, options);
+};
+
 // Debug logging
 if (typeof window !== 'undefined') {
   console.log('=== GATEWAY DEBUG ===');
@@ -34,7 +46,7 @@ export async function sessionsSpawn(params: SpawnParams): Promise<SpawnResult> {
   console.log('📋 Request params:', JSON.stringify(params));
 
   try {
-    const response = await fetch(`${GATEWAY_URL}/api/sessions/spawn`, {
+    const response = await safeFetch(`${GATEWAY_URL}/api/sessions/spawn`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -70,7 +82,7 @@ export async function getSessionHistory(sessionKey: string, limit = 100): Promis
   console.log('📡 REQUESTING HISTORY:', `${GATEWAY_URL}/api/sessions/history?sessionKey=${sessionKey}&limit=${limit}`);
 
   try {
-    const response = await fetch(`${GATEWAY_URL}/api/sessions/history?sessionKey=${sessionKey}&limit=${limit}`, {
+    const response = await safeFetch(`${GATEWAY_URL}/api/sessions/history?sessionKey=${sessionKey}&limit=${limit}`, {
       headers: {
         ...(GATEWAY_TOKEN ? { 'Authorization': GATEWAY_TOKEN } : {}),
       },
@@ -95,7 +107,7 @@ export async function checkGatewayHealth(): Promise<boolean> {
   console.log('📡 Checking health at:', `${GATEWAY_URL}/api/session/status`);
 
   try {
-    const response = await fetch(`${GATEWAY_URL}/api/session/status`, {
+    const response = await safeFetch(`${GATEWAY_URL}/api/session/status`, {
       method: 'GET',
       headers: {
         ...(GATEWAY_TOKEN ? { 'Authorization': GATEWAY_TOKEN } : {}),
