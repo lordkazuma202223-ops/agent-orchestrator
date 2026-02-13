@@ -23,7 +23,7 @@ export async function sessionsSpawn(params: SpawnParams): Promise<SpawnResult> {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      ...(GATEWAY_TOKEN ? { 'Authorization': `Bearer ${GATEWAY_TOKEN}` } : {}),
+      ...(GATEWAY_TOKEN ? { 'Authorization': GATEWAY_TOKEN } : {}),
     },
     body: JSON.stringify(params),
   });
@@ -42,7 +42,7 @@ export async function sessionsSpawn(params: SpawnParams): Promise<SpawnResult> {
 export async function getSessionHistory(sessionKey: string, limit = 100): Promise<any> {
   const response = await fetch(`${GATEWAY_URL}/api/sessions/history?sessionKey=${sessionKey}&limit=${limit}`, {
     headers: {
-      ...(GATEWAY_TOKEN ? { 'Authorization': `Bearer ${GATEWAY_TOKEN}` } : {}),
+      ...(GATEWAY_TOKEN ? { 'Authorization': GATEWAY_TOKEN } : {}),
     },
   });
 
@@ -58,15 +58,15 @@ export async function getSessionHistory(sessionKey: string, limit = 100): Promis
  */
 export async function checkGatewayHealth(): Promise<boolean> {
   try {
-    const response = await fetch(`${GATEWAY_URL}/api/status`, {
+    const response = await fetch(`${GATEWAY_URL}/api/session/status`, {
       method: 'GET',
       headers: {
-        ...(GATEWAY_TOKEN ? { 'Authorization': `Bearer ${GATEWAY_TOKEN}` } : {}),
+        ...(GATEWAY_TOKEN ? { 'Authorization': GATEWAY_TOKEN } : {}),
       },
     });
     return response.ok;
   } catch (error) {
-    
+
     return false;
   }
 }
