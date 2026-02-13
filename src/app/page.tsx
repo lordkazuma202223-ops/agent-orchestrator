@@ -30,6 +30,13 @@ export default function Home() {
       return;
     }
 
+    // Check if all agents have prompts
+    const agentsWithoutPrompts = workflow.agents.filter(agent => !agent.prompt || agent.prompt.trim() === '');
+    if (agentsWithoutPrompts.length > 0) {
+      alert(`Please set prompts for all agents before running. Missing: ${agentsWithoutPrompts.map(a => a.name).join(', ')}`);
+      return;
+    }
+
     setIsExecuting(true);
 
     // Create execution object
