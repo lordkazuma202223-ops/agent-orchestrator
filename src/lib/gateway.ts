@@ -1,73 +1,44 @@
-const GATEWAY_URL = process.env.NEXT_PUBLIC_OPENCLAW_GATEWAY_URL || 'http://localhost:18789';
-const GATEWAY_TOKEN = process.env.NEXT_PUBLIC_GATEWAY_TOKEN || '';
-
 export interface SpawnParams {
   task: string;
   label?: string;
   agentId?: string;
-  timeoutSeconds?: number;
   model?: string;
 }
 
-export interface SpawnResult {
-  sessionKey: string;
-  message?: string;
-  error?: string;
-}
+export type SpawnResult =
+  | { sessionKey: string; message?: string }
+  | { error: string };
 
 /**
- * Spawn a new agent session via OpenClaw Gateway
+ * Spawn a new agent session via Vercel API route (CORS proxy to OpenClaw Gateway)
  */
 export async function sessionsSpawn(params: SpawnParams): Promise<SpawnResult> {
-  const url = `${GATEWAY_URL}/api/sessions/spawn`;
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(GATEWAY_TOKEN ? { 'Authorization': GATEWAY_TOKEN } : {}),
-    },
-    body: JSON.stringify(params),
-  });
-
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Failed to spawn agent: ${response.status} ${error}`);
-  }
-
-  return response.json();
-}
-
-/**
- * Get session history
- */
-export async function getSessionHistory(sessionKey: string, limit = 100): Promise<any> {
-  const url = `${GATEWAY_URL}/api/sessions/history?sessionKey=${sessionKey}&limit=${limit}`;
-  const response = await fetch(url, {
-    headers: {
-      ...(GATEWAY_TOKEN ? { 'Authorization': GATEWAY_TOKEN } : {}),
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to get session history: ${response.status}`);
-  }
-
-  return response.json();
-}
-
-/**
- * Check Gateway health
- */
-export async function checkGatewayHealth(): Promise<boolean> {
   try {
-    const response = await fetch(`${GATEWAY_URL}/api/session/status`, {
-      method: 'GET',
+    const response = await fetch('/api/sessions/spawn', {
+      method: 'POST',
       headers: {
-        ...(GATEWAY_TOKEN ? { 'Authorization': GATEWAY_TOKEN } : {}),
+        'Content-Type': 'application/json',
       },
+      body: JSON.stringify(params),
     });
-    return response.ok;
+
+    if (!response.ok) {
+      const error = await response.json();
+      return { error: error.error || 'Failed to spawn agent' };
+    }
+
+    const data = await response.json();
+
+    // Extract output from response
+    const outputText = data.output?.[0]?.content?.[0]?.text || data.message || 'Agent spawned successfully';
+
+    return {
+      sessionKey: 'generated-session',
+      message: outputText,
+    };
   } catch (error) {
-    return false;
+    return {
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
   }
 }

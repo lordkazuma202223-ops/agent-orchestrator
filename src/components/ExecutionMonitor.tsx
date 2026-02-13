@@ -89,7 +89,11 @@ export function ExecutionMonitor({ execution }: ExecutionMonitorProps) {
 
             {result.status === 'completed' && result.output && (
               <div className="mt-3 p-3 bg-slate-900 rounded border border-slate-700">
-                <p className="text-slate-300 text-sm whitespace-pre-wrap">{String(result.output)}</p>
+                <p className="text-slate-300 text-sm whitespace-pre-wrap">
+                  {typeof result.output === 'string'
+                    ? result.output
+                    : (result.output as any).text || result.output.message || 'Agent completed successfully'}
+                </p>
               </div>
             )}
 
@@ -115,6 +119,31 @@ export function ExecutionMonitor({ execution }: ExecutionMonitorProps) {
               {Math.floor(execution.totalDuration / 1000)}s
             </span>
           </div>
+        </div>
+      )}
+
+      {/* Debug Info */}
+      {execution.results.some((r) => r.output && typeof r.output === 'object' && 'debug' in r.output) && (
+        <div className="mt-4 p-4 bg-slate-900 rounded-lg border border-slate-700">
+          <h3 className="text-yellow-400 font-semibold mb-2">Debug Information</h3>
+          {execution.results.map((result) => {
+            const debug = result.output && typeof result.output === 'object' ? (result.output as any).debug : null;
+            if (debug) {
+              return (
+                <div key={result.agentId} className="space-y-2 text-xs">
+                  <div className="text-slate-400">Agent: {result.agentName}</div>
+                  <div className="text-slate-300">Status: {result.status}</div>
+                  <div className="text-slate-300">Gateway URL: {debug?.gatewayUrl || 'N/A'}</div>
+                  <div className="text-slate-300">Request: {debug?.requestTask || 'N/A'}</div>
+                  <div className="text-slate-300">Response Status: {debug?.responseStatus || 'N/A'}</div>
+                  {debug?.error && (
+                    <div className="text-red-400">Error: {debug.error || 'N/A'}</div>
+                  )}
+                </div>
+              );
+            }
+            return null;
+          })}
         </div>
       )}
     </div>

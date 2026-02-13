@@ -71,15 +71,23 @@ export default function Home() {
           const spawnResult = await sessionsSpawn({
             task: agent.prompt,
             label: agent.name,
-            timeoutSeconds: agent.timeout / 1000,
+            // timeoutSeconds parameter not supported by OpenResponses API
           });
 
           const endTime = Date.now();
 
+          // Check if spawn failed
+          if ('error' in spawnResult) {
+            throw new Error(spawnResult.error);
+          }
+
+          // Extract output text from response
+          const outputText = spawnResult.message || 'Agent spawned successfully';
+
           const completedResult: AgentResult = {
             ...agentResult,
             status: 'completed',
-            output: spawnResult,
+            output: { ...spawnResult, text: outputText },
             duration: endTime - startTime,
             endTime: new Date().toISOString(),
           };
