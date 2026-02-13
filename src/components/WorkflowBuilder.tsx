@@ -148,29 +148,29 @@ export function WorkflowBuilder({
   return (
     <div className="flex flex-col h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 bg-black/20 backdrop-blur-sm border-b border-white/10">
-        <h1 className="text-2xl font-bold text-white">{workflow.name}</h1>
-        <div className="flex gap-2">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 sm:p-4 bg-black/20 backdrop-blur-sm border-b border-white/10">
+        <h1 className="text-lg sm:text-2xl font-bold text-white truncate">{workflow.name}</h1>
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
           <button
             onClick={addAgent}
-            className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+            className="flex items-center justify-center gap-2 flex-1 sm:flex-none px-3 sm:px-4 py-2.5 sm:py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm sm:text-base min-h-[44px]"
           >
             <Plus size={18} />
-            Add Agent
+            <span className="hidden sm:inline">Add Agent</span>
           </button>
           <button
             onClick={onSave}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+            className="flex items-center justify-center gap-2 flex-1 sm:flex-none px-3 sm:px-4 py-2.5 sm:py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm sm:text-base min-h-[44px]"
           >
             <Save size={18} />
-            Save
+            <span className="hidden sm:inline">Save</span>
           </button>
           <button
             onClick={onRun}
-            className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+            className="flex items-center justify-center gap-2 flex-1 sm:flex-none px-3 sm:px-4 py-2.5 sm:py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm sm:text-base min-h-[44px]"
           >
             <Play size={18} />
-            Run Workflow
+            <span className="hidden sm:inline">Run</span>
           </button>
         </div>
       </div>
@@ -186,11 +186,24 @@ export function WorkflowBuilder({
           nodeTypes={nodeTypes}
           fitView
           fitViewOptions={{ padding: 0.2 }}
+          panOnScroll
+          selectionOnDrag
+          panOnDrag
+          zoomOnScroll
+          zoomOnPinch
+          minZoom={0.1}
+          maxZoom={2}
+          defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
         >
           <Background color="#ffffff20" gap={16} />
-          <Controls className="bg-black/50 border-white/10" />
+          <Controls
+            className="bg-black/50 border-white/10 !hidden sm:!block"
+            showZoom={true}
+            showFitView={true}
+            showInteractive={false}
+          />
           <MiniMap
-            className="bg-black/50 border-white/10"
+            className="bg-black/50 border-white/10 !hidden sm:!block"
             nodeColor="#6366f1"
             maskColor="rgba(0, 0, 0, 0.5)"
           />
