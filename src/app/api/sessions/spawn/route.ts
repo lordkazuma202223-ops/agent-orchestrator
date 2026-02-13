@@ -7,23 +7,18 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    // Debug: log incoming request
-    console.log('===== SPAWN REQUEST START =====');
-    console.log('Request body:', JSON.stringify(body, null, 2));
-    console.log('Request task:', body.task);
-    console.log('Request label:', body.label);
-
     // Proxy to OpenClaw Gateway /v1/responses endpoint
     // OpenResponses API accepts input as string or array of items
-    // timeoutSeconds parameter not supported by OpenResponses API
     const gatewayRequest = {
       model: 'openclaw',
-      input: body.task,
-      user: body.label || 'agent-orchestrator',
+      input: [
+        {
+          type: 'message',
+          role: 'user',
+          content: body.task,
+        },
+      ],
     };
-
-    console.log('Gateway request:', JSON.stringify(gatewayRequest, null, 2));
-    console.log('Gateway URL:', GATEWAY_URL);
 
     const response = await fetch(`${GATEWAY_URL}/v1/responses`, {
       method: 'POST',
@@ -35,26 +30,10 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify(gatewayRequest),
     });
 
-    console.log('Gateway response status:', response.status);
-    console.log('Gateway response headers:', Object.fromEntries(response.headers.entries()));
-
-    const responseText = await response.text();
-    console.log('Gateway response body:', responseText);
-    console.log('===== SPAWN REQUEST END =====');
-
-    // Include debug info in error response
-    const debugInfoError = {
-      gatewayUrl: GATEWAY_URL,
-      requestTask: body.task,
-      requestLabel: body.label,
-      responseStatus: response.status,
-      responseHeaders: Object.fromEntries(response.headers.entries()),
-      responseBody: responseText,
-    };
-
     if (!response.ok) {
+      const errorText = await response.text();
       return NextResponse.json(
-        { error: `Failed to spawn agent: ${response.status} ${responseText}`, debug: debugInfoError },
+        { error: `Failed to spawn agent: ${response.status} ${errorText}` },
         { 
           status: response.status,
           headers: {
@@ -68,26 +47,23 @@ export async function POST(request: NextRequest) {
 
     const data = await response.json();
 
-    // Include debug info in success response
-    const debugInfoSuccess = {
-      gatewayUrl: GATEWAY_URL,
-      requestTask: body.task,
-      requestLabel: body.label,
-      responseStatus: response.status,
-      responseBody: data,
-    };
+    // Extract text from response
+    const outputText = data.output?.[0]?.content?.[0]?.text || 'Agent completed successfully';
 
-    // Return response with CORS headers and debug info
-    return NextResponse.json({ ...data, debug: debugInfoSuccess }, {
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    return NextResponse.json(
+      { 
+        sessionKey: 'generated-session',
+        message: outputText,
       },
-    });
+      {
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        },
+      }
+    );
   } catch (error) {
-    console.log('Error in spawn handler:', error);
-
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Unknown error' },
       { 
