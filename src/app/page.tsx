@@ -55,73 +55,102 @@ export default function Home() {
     setExecution(newExecution);
 
     try {
-      // Execute agents in sequence (simplified)
-      // In production, handle dependencies properly
+      // Execute agents respecting dependencies (topological order)
       const results: AgentResult[] = [];
+      const completedAgents = new Set<string>();
 
-      for (const agent of workflow.agents) {
-        const agentResult: AgentResult = {
-          agentId: agent.id,
-          agentName: agent.name,
-          status: 'running',
-          startTime: new Date().toISOString(),
-        };
+      // Helper function to check if all dependencies are completed
+      const areDependenciesComplete = (agentId: string): boolean => {
+        const agent = workflow.agents.find(a => a.id === agentId);
+        if (!agent) return true;
+        return agent.dependsOn.every(depId => completedAgents.has(depId));
+      };
 
-        // Update execution with running agent
-        setExecution({
-          ...newExecution,
-          results: [...results, agentResult],
+      // Execute agents in dependency order
+      while (completedAgents.size < workflow.agents.length) {
+        // Find next batch of agents whose dependencies are complete
+        const readyAgents = workflow.agents.filter(
+          agent => !completedAgents.has(agent.id) && areDependenciesComplete(agent.id)
+        );
+
+        if (readyAgents.length === 0) {
+          // Circular dependency or error
+          throw new Error('Unable to resolve agent dependencies - possible circular dependency');
+        }
+
+        // Execute ready agents in parallel
+        const readyAgentPromises = readyAgents.map(async (agent) => {
+          const agentResult: AgentResult = {
+            agentId: agent.id,
+            agentName: agent.name,
+            status: 'running',
+            startTime: new Date().toISOString(),
+          };
+
+          // Update execution with running agent
+          setExecution({
+            ...newExecution,
+            results: [...results, agentResult],
+          });
+
+          const startTime = Date.now();
+
+          try {
+            // Pass outputs from completed dependencies
+            const dependencyOutputs = agent.dependsOn
+              .map(depId => results.find(r => r.agentId === depId)?.output)
+              .filter(Boolean);
+
+            const enhancedPrompt = dependencyOutputs.length > 0
+              ? `Dependencies outputs:\n${dependencyOutputs.map((o: any) => o.text).join('\n\n')}\n\n---\n\n${agent.prompt}`
+              : agent.prompt;
+
+            const spawnResult = await sessionsSpawn({
+              task: enhancedPrompt,
+              label: agent.name,
+            });
+
+            const endTime = Date.now();
+
+            if ('error' in spawnResult) {
+              throw new Error(spawnResult.error);
+            }
+
+            const outputText = spawnResult.message || 'Agent completed successfully';
+
+            const completedResult: AgentResult = {
+              ...agentResult,
+              status: 'completed',
+              output: { ...spawnResult, text: outputText },
+              duration: endTime - startTime,
+              endTime: new Date().toISOString(),
+            };
+
+            completedAgents.add(agent.id);
+            return completedResult;
+          } catch (error) {
+            const failedResult: AgentResult = {
+              ...agentResult,
+              status: 'failed',
+              error: error instanceof Error ? error.message : 'Unknown error',
+              duration: Date.now() - startTime,
+              endTime: new Date().toISOString(),
+            };
+
+            completedAgents.add(agent.id);
+            return failedResult;
+          }
         });
 
-        const startTime = Date.now();
+        // Wait for all ready agents to complete
+        const batchResults = await Promise.all(readyAgentPromises);
+        results.push(...batchResults);
 
-        try {
-          const spawnResult = await sessionsSpawn({
-            task: agent.prompt,
-            label: agent.name,
-            // timeoutSeconds parameter not supported by OpenResponses API
-          });
-
-          const endTime = Date.now();
-
-          // Check if spawn failed
-          if ('error' in spawnResult) {
-            throw new Error(spawnResult.error);
-          }
-
-          // Extract output text from response
-          const outputText = spawnResult.message || 'Agent spawned successfully';
-
-          const completedResult: AgentResult = {
-            ...agentResult,
-            status: 'completed',
-            output: { ...spawnResult, text: outputText },
-            duration: endTime - startTime,
-            endTime: new Date().toISOString(),
-          };
-
-          results.push(completedResult);
-
-          setExecution({
-            ...newExecution,
-            results: [...results, completedResult],
-          });
-        } catch (error) {
-          const failedResult: AgentResult = {
-            ...agentResult,
-            status: 'failed',
-            error: error instanceof Error ? error.message : 'Unknown error',
-            duration: Date.now() - startTime,
-            endTime: new Date().toISOString(),
-          };
-
-          results.push(failedResult);
-
-          setExecution({
-            ...newExecution,
-            results: [...results, failedResult],
-          });
-        }
+        // Update execution with new results
+        setExecution({
+          ...newExecution,
+          results: [...results],
+        });
       }
 
       // Update final execution
