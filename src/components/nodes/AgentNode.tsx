@@ -123,7 +123,10 @@ export function NodeComponent({ data, selected, id }: NodeProps) {
           </div>
         )}
 
-        <button className="p-1 hover:bg-red-500/20 rounded text-slate-400 hover:text-red-400 transition-colors cursor-not-allowed">
+        <button
+          onClick={() => nodeData.onDelete && nodeData.onDelete(id as string)}
+          className="p-1 hover:bg-red-500/20 rounded text-slate-400 hover:text-red-400 transition-colors"
+        >
           <Trash2 size={10} className="sm:hidden" />
           <Trash2 size={12} className="hidden sm:block" />
         </button>
