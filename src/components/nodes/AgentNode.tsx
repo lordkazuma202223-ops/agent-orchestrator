@@ -40,7 +40,8 @@ export function NodeComponent({ data, selected }: NodeProps) {
       {/* Header */}
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-1.5 sm:gap-2 flex-1">
-          <Zap size={14} sm:size={16} className="text-purple-400" />
+          <Zap size={14} className="text-purple-400 sm:hidden" />
+          <Zap size={16} className="text-purple-400 hidden sm:block" />
           {isEditing ? (
             <input
               type="text"
@@ -60,7 +61,8 @@ export function NodeComponent({ data, selected }: NodeProps) {
           }}
           className="p-1.5 hover:bg-slate-700 rounded text-slate-300 hover:text-white transition-colors"
         >
-          <Edit size={12} sm:size={14} />
+          <Edit size={12} className="sm:hidden" />
+          <Edit size={14} className="hidden sm:block" />
         </button>
       </div>
 
@@ -85,7 +87,8 @@ export function NodeComponent({ data, selected }: NodeProps) {
       <div className="flex items-center justify-between text-[10px] sm:text-xs text-slate-400">
         {isEditing ? (
           <div className="flex items-center gap-1 sm:gap-2">
-            <Clock size={10} sm:size={12} />
+            <Clock size={10} className="sm:hidden" />
+            <Clock size={12} className="hidden sm:block" />
             <input
               type="number"
               value={timeout}
@@ -96,13 +99,15 @@ export function NodeComponent({ data, selected }: NodeProps) {
           </div>
         ) : (
           <div className="flex items-center gap-0.5 sm:gap-1">
-            <Clock size={10} sm:size={12} />
+            <Clock size={10} className="sm:hidden" />
+            <Clock size={12} className="hidden sm:block" />
             <span>{Math.floor(nodeData.timeout / 1000)}s</span>
           </div>
         )}
 
         <button className="p-1 hover:bg-red-500/20 rounded text-slate-400 hover:text-red-400 transition-colors cursor-not-allowed">
-          <Trash2 size={10} sm:size={12} />
+          <Trash2 size={10} className="sm:hidden" />
+          <Trash2 size={12} className="hidden sm:block" />
         </button>
       </div>
     </div>
